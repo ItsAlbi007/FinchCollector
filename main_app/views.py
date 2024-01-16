@@ -32,3 +32,10 @@ def finch_index(request):
   #  print(finch)
 
   return render(request, 'finch/index.html', { 'finch': finch })
+
+# detail view - shows finch at '.finch/:id
+def finch_detail(request, finch_id):
+  # find on finch with its id
+  finch = Finch.objects.get(id=finch_id)
+  
+  return render(request, 'finch/detail.html', { 'finch': finch })
