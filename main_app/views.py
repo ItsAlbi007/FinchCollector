@@ -1,23 +1,15 @@
+import uuid
+import boto3
+import os
+
 from django.shortcuts import render, redirect
-# importing out calss based views (CBVs)
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
-
-from .models import Finch, Toy
+from .models import Finch, Toy, Photo
 from .forms import FeedingForm
-# add finch list below 
-# views.py
 
-# Add this list below the imports
-# this was to build the intial view - now we have finch in the db
-#finch = [
-#  {'name': 'Haemorhous purpureus', 'breed': 'Fringillidae', 'description': 'Home Finch', 'age': 1},
-#  {'name': 'Red avadavat', 'breed': 'Estrildidae', 'description': 'Strawberry Finch', 'age': 2},
-#  {'name': 'Bicheno finch', 'breed': 'Taeniopygia bichenovi', 'description': 'Owl Finch', 'age': 0},  
-#]
 
-# Create your views here.
 
 # define home view here - '/'
 
@@ -29,17 +21,12 @@ def about(request):
 
 # index view - shows all finch
 def finch_index(request):
-  # collect out objects from teh database
   finch = Finch.objects.all()
-  #print(finch)
-  # for Finch in finch:
-  #  print(finch)
 
   return render(request, 'finch/index.html', { 'finch': finch })
 
 # detail view - shows finch at '.finch/:id
 def finch_detail(request, finch_id):
-  # find on finch with its id
   finch = Finch.objects.get(id=finch_id)
   feeding_form = FeedingForm()
   return render(request, 'finch/detail.html', { 'finch': finch, 'feeding_form': feeding_form })
@@ -95,3 +82,18 @@ class ToyUpdate(UpdateView):
 class ToyDelete(DeleteView):
     model = Toy
     success_url = '/toys'
+
+def add_photo(request, finch_id):
+   photo_file = request.FILES.get('photo-file', None)
+   if photo_file:
+      s3 = boto3.client('s3')
+      key = uuid.uuid4().hex[:6] + photo_file.name[photo_file.name.rfind('.'):]
+      try:
+        bucket = os.environ['S3_BUCKET']
+        s3.upload_fileobj(photo_file, bucket, key)
+        url = f"{os.environ['S3_BASE_URL']}{bucket}/{key}"
+        Photo.objects.create(url=url, finch_id=finch_id)
+      except Exception as e:
+         print('An error occurred uploading file to S3')
+         print(e)
+      return redirect('detail', finch_id=finch_id)   
