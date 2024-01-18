@@ -1,4 +1,6 @@
 from django.shortcuts import render
+# importing out calss based views (CBVs)
+from django.views.generic.edit import CreateView
 
 from .models import Finch
 
@@ -39,3 +41,9 @@ def finch_detail(request, finch_id):
   finch = Finch.objects.get(id=finch_id)
   
   return render(request, 'finch/detail.html', { 'finch': finch })
+
+# inherit from CBV
+class FinchCreate(CreateView):
+  model = Finch
+  fields = '__all__'
+   # success_url = '/finch/{finch_id}'
